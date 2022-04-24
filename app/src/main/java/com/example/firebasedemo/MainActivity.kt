@@ -8,8 +8,11 @@ import android.app.AlertDialog
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.firestore.ktx.toObjects
 import kotlinx.android.synthetic.main.activity_main.*
+import java.lang.StringBuilder
 
 class MainActivity : AppCompatActivity() {
 
@@ -304,6 +307,8 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * ######################### End of Alternative-2 functions ###################################
+     *
+     * ################################### Real time Update #######################################
      */
 
     // Gets realtime updates whenever the data on the server is updated
@@ -311,23 +316,24 @@ class MainActivity : AppCompatActivity() {
 
         // Get real time update
         fireBaseDb.collection("contacts")
+            .orderBy("id")
             .addSnapshotListener{ snapshots, e ->
                 if (e != null) {
                     Log.w(TAG, "Listen failed.", e)
                     return@addSnapshotListener
                 }
 
-
                 if (snapshots != null) {
-
                     // This will be called every time a document is updated
                     Log.d(TAG, "onEvent: -----------------------------")
 
+                    val stringBuilder = StringBuilder()
+                    // Convert documents to a collection of Contact
                     val contacts = snapshots.toObjects<Contact>()
-                    for (contact in contacts) {
-                        Log.d(TAG, "Current data: ${contact}")
-                        showData(contact)
-                    }
+
+                    // Show all the records in a recyclerView with updated data
+                    showDataInRecyclerView(contacts)
+
                 } else {
                     Log.d(TAG, "Current data: null")
                 }
@@ -337,10 +343,17 @@ class MainActivity : AppCompatActivity() {
     /**
      * A helper function to show contact data in the textViews
      */
-    private fun showData(contact: Contact){
-        text_id.setText(contact.id.toString())
-        text_name.setText(contact.name.toString())
-        text_email.setText(contact.email.toString())
+    private fun showDataInRecyclerView(contacts: List<Contact>) {
+
+        // Store the the recyclerView widget in a variable
+        val recyclerView = findViewById<RecyclerView>(R.id.recycler_view)
+
+        // specify an viewAdapter for the dataset (we use dummy data containing 20 contacts)
+        recyclerView.adapter = MyRecyclerAdapter(contacts)
+
+        // use a linear layout manager, you can use different layouts as well
+        recyclerView.layoutManager = LinearLayoutManager(this)
+
     }
 
     /**
